@@ -16,14 +16,15 @@ import android.widget.TextView;
 
 import org.w3c.dom.Text;
 
-import java.lang.reflect.Array;
+import java.sql.Array;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
 
 public class MainActivity extends AppCompatActivity {
     ArrayList<SeekBar> dogs = new ArrayList<SeekBar>();
-    ArrayList<Drawable> animaFrame;
+    ArrayList<Gift> gifts = new ArrayList<Gift>();
+    ArrayList<Drawable> animaFrame, giftFrame;
     HashMap<Integer, Integer> result = new HashMap<>();
     int dogs_size = 4, startPos = 10, endPos = 90, rank = 0;
     ArrayList<TextView> rankPlayer = new ArrayList<>();
@@ -44,10 +45,18 @@ public class MainActivity extends AppCompatActivity {
         rankPlayer.add(findViewById(R.id.txtRankDog3));
         rankPlayer.add(findViewById(R.id.txtRankDog4));
         animaFrame = getAnimationList();
+        giftFrame = getGiftList();
 
         for (int i = 0; i < dogs_size; i++) {
-            SeekBar Dog = CreateDog(i);
-            dogs.add(Dog);
+            SeekBar dog = CreateDog(i);
+            SeekBar giftImg = new SeekBar(this);
+//            giftImg.setThumb(resize(getResources().getDrawable(R.drawable.nothing), 50, 50));
+            Gift gift = new Gift(i, giftImg, endPos);
+
+            gifts.add(gift);
+            dogs.add(dog);
+
+            racetrack.addView(giftImg);
             racetrack.addView(dogs.get(i));
         }
 
@@ -71,14 +80,60 @@ public class MainActivity extends AppCompatActivity {
 
     private void update(int anim) {
         if (!isEnd()) {
-            for (int i = 0; i < dogs_size; i++) {
-                SeekBar cur_dog = dogs.get(i);
-                if (cur_dog.getProgress() < endPos) {
-                    cur_dog.setProgress(Math.min(cur_dog.getProgress() + random.nextInt(2), endPos));
-                    dogs.get(i).setThumb(animaFrame.get(i*8 + anim%8));
+            int i = 0;
+            for (Gift item: gifts) {
+                if (item.getEnabled()) {
+                    int cur_pos_gift = item.getGiftImg().getProgress();
+                    int cur_pos_dog = dogs.get(i).getProgress();
+                    item.getGiftImg().setProgress(cur_pos_gift - 1);
+                    if (cur_pos_gift <= cur_pos_dog) {
+                        item.setEffected(true);
+                    }
+                    i++;
+                    continue;
                 }
-
+                int ran = random.nextInt(100);
+                if (ran < 5) {
+                    int type = random.nextInt(3);
+                    gifts.get(i).enableGift(type , giftFrame.get(type), endPos);
+                }
+                i++;
             }
+
+            for (i = 0; i < dogs_size; i++) {
+                SeekBar cur_dog = dogs.get(i);
+                Gift cur_gift = gifts.get(i);
+                if (cur_dog.getProgress() < endPos) {
+                    boolean isFreeze = false;
+                    int speedup = 1;
+                    int teleport = 0;
+
+                    if (cur_gift.getEffected()) {
+                        int bufftime = cur_gift.getBuffTime();
+                        if (bufftime <= 0) {
+                            cur_gift.resetGift(endPos);
+                        }
+                        else {
+                            cur_gift.setBuffTime(bufftime - 1);
+                            switch (cur_gift.getType()) {
+                                case 0: speedup = 2; break;
+                                case 1: teleport = 10; break;
+                                case 2: isFreeze = true; break;
+                            }
+                        }
+                    }
+
+                    dogs.get(i).setThumb(animaFrame.get(i*8 + anim%8));
+                    if (isFreeze) {
+                        cur_dog.setThumb(resize(getResources().getDrawable(R.drawable.dogfreezed)));
+                    }
+                    else  {
+                        cur_dog.setProgress(Math.min(cur_dog.getProgress() + (random.nextInt(3)/2 + teleport) * speedup, endPos));
+                    }
+                }
+            }
+
+
 
             handler.postDelayed(new Runnable() {
                 @Override
@@ -111,9 +166,12 @@ public class MainActivity extends AppCompatActivity {
         for (int i = 0; i < dogs_size; i++) {
             dogs.get(i).setProgress(startPos);
             dogs.get(i).setThumb(animaFrame.get(i * 8));
+
+            gifts.get(i).resetGift(endPos);
         }
         result.clear();
         rank = 0;
+
     }
 
     private boolean isEnd() {
@@ -144,7 +202,7 @@ public class MainActivity extends AppCompatActivity {
         view.height = 700;
         view.startToStart = ConstraintLayout.LayoutParams.PARENT_ID;
         view.topToTop = ConstraintLayout.LayoutParams.PARENT_ID;
-        view.topMargin = 100 * (player);
+        view.topMargin = 150 * (player);
 
         Dog.setProgressDrawable(Drawable.createFromPath("@drawable/seekbar_template"));
         Dog.setThumb(animaFrame.get(player * 8));
@@ -155,6 +213,11 @@ public class MainActivity extends AppCompatActivity {
     private Drawable resize(Drawable image) {
         Bitmap b = ((BitmapDrawable)image).getBitmap();
         Bitmap bitmapResized = Bitmap.createScaledBitmap(b, 100, 100, false);
+        return new BitmapDrawable(getResources(), bitmapResized);
+    }
+    private Drawable resize(Drawable image, int width, int height) {
+        Bitmap b = ((BitmapDrawable)image).getBitmap();
+        Bitmap bitmapResized = Bitmap.createScaledBitmap(b, width, height, false);
         return new BitmapDrawable(getResources(), bitmapResized);
     }
 
@@ -197,6 +260,13 @@ public class MainActivity extends AppCompatActivity {
         list.add(resize(getResources().getDrawable(R.drawable.dogblack6)));
         list.add(resize(getResources().getDrawable(R.drawable.dogblack7)));
         list.add(resize(getResources().getDrawable(R.drawable.dogblack8)));
+        return list;
+    }
+    private ArrayList<Drawable> getGiftList() {
+        ArrayList<Drawable> list = new ArrayList<Drawable>();
+        list.add(resize(getResources().getDrawable(R.drawable.speedup), 50, 50));
+        list.add(resize(getResources().getDrawable(R.drawable.tele), 50, 50));
+        list.add(resize(getResources().getDrawable(R.drawable.freeze), 50, 50));
         return list;
     }
 }

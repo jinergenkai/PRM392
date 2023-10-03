@@ -5,14 +5,20 @@ import androidx.constraintlayout.widget.ConstraintLayout;
 
 import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
+import android.graphics.Color;
+import android.graphics.Interpolator;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Handler;
+import android.provider.CalendarContract;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import org.w3c.dom.Text;
 
@@ -26,8 +32,10 @@ public class MainActivity extends AppCompatActivity {
     ArrayList<Gift> gifts = new ArrayList<Gift>();
     ArrayList<Drawable> animaFrame, giftFrame;
     HashMap<Integer, Integer> result = new HashMap<>();
-    int dogs_size = 4, startPos = 10, endPos = 90, rank = 0;
+    int dogs_size = 4, startPos = 20, endPos = 90, rank = 0, playerMoney = 100;
+    TextView txtPlayerMoney ;
     ArrayList<TextView> rankPlayer = new ArrayList<>();
+    ArrayList<TextView> betPlayer = new ArrayList<>();
     Button btnStart, btnReset;
     private Handler handler = new Handler();
     Random random = new Random();
@@ -40,16 +48,55 @@ public class MainActivity extends AppCompatActivity {
 
         racetrack = findViewById(R.id.container);
 
+        txtPlayerMoney= (TextView) findViewById(R.id.txtPlayerMoney);
+        txtPlayerMoney.setEnabled(false);
+        txtPlayerMoney.setText(String.valueOf(playerMoney));
+
+
         rankPlayer.add(findViewById(R.id.txtRankDog1));
         rankPlayer.add(findViewById(R.id.txtRankDog2));
         rankPlayer.add(findViewById(R.id.txtRankDog3));
         rankPlayer.add(findViewById(R.id.txtRankDog4));
+
+        betPlayer.add(findViewById(R.id.txtBetDog1));
+        betPlayer.add(findViewById(R.id.txtBetDog2));
+        betPlayer.add(findViewById(R.id.txtBetDog3));
+        betPlayer.add(findViewById(R.id.txtBetDog4));
+        for (TextView textView : betPlayer) {
+            textView.setText("0");
+            textView.addTextChangedListener(new TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+                }
+
+                @Override
+                public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+                }
+
+                @Override
+                public void afterTextChanged(Editable s) {
+                    try {
+                        int enteredBet = Integer.parseInt(s.toString());
+                        if (enteredBet > playerMoney) {
+                            s.replace(0, s.length(), "0");
+                            Toast.makeText(MainActivity.this, "Số tiền cược không được vượt quá số tiền bạn có", Toast.LENGTH_SHORT).show();
+                        }
+                    } catch (NumberFormatException e) {
+                    }
+                }
+            });
+        }
+
         animaFrame = getAnimationList();
         giftFrame = getGiftList();
 
         for (int i = 0; i < dogs_size; i++) {
             SeekBar dog = CreateDog(i);
             SeekBar giftImg = new SeekBar(this);
+            dog.setEnabled(false);
+            giftImg.setEnabled(false);
 //            giftImg.setThumb(resize(getResources().getDrawable(R.drawable.nothing), 50, 50));
             Gift gift = new Gift(i, giftImg, endPos);
 
@@ -65,19 +112,42 @@ public class MainActivity extends AppCompatActivity {
         btnReset = findViewById(R.id.btnReset);
 
         btnStart.setOnClickListener((v) -> {
+            if(!validateInput()){
+                for (TextView textView : betPlayer) {
+                    textView.setText(String.valueOf(0));
+                }
+                Toast.makeText(this, "Tổng số tiền cược phải bé hơn số tiền bạn đang có: " + playerMoney, Toast.LENGTH_SHORT).show();
+                return;
+            };
             btnStart.setEnabled(false);
             btnReset.setEnabled(false);
+            for (TextView textView : betPlayer) {
+                textView.setEnabled(false);
+            }
 
             update(1);
 
         });
 
         btnReset.setOnClickListener((v) -> {
+            for (TextView textView : betPlayer) {
+                textView.setEnabled(true);
+            }
             reset();
         });
 
     }
 
+    private boolean validateInput() {
+        int x = 0;
+        for (TextView textView : betPlayer) {
+            x += Integer.parseInt(textView.getText().toString());
+        }
+        if (x>playerMoney){
+            return false;
+        }
+        return true;
+    }
     private void update(int anim) {
         if (!isEnd()) {
             int i = 0;
@@ -157,6 +227,24 @@ public class MainActivity extends AppCompatActivity {
             item.setText(String.valueOf(result.get(i)));
             i++;
         }
+        for (int j = 0; j < dogs_size; j++) {
+            TextView item = rankPlayer.get(j);
+            item.setText(String.valueOf(result.get(j)));
+            if (result.get(j) == 1) {
+                int betAmount = Integer.parseInt(betPlayer.get(j).getText().toString());
+                playerMoney += (2 * betAmount);
+                txtPlayerMoney.setText(String.valueOf(playerMoney));
+            } else if (result.get(j) == 2) {
+                int betAmount = Integer.parseInt(betPlayer.get(j).getText().toString());
+                playerMoney += betAmount;
+                txtPlayerMoney.setText(String.valueOf(playerMoney));
+            } else if (result.get(j) == 3 || result.get(j) == 4) {
+                int betAmount = Integer.parseInt(betPlayer.get(j).getText().toString());
+                playerMoney -= betAmount;
+                txtPlayerMoney.setText(String.valueOf(playerMoney));
+            }
+        }
+        Toast.makeText(this, "Số tiền của bạn: " + playerMoney, Toast.LENGTH_SHORT).show();
     }
 
     private void reset() {

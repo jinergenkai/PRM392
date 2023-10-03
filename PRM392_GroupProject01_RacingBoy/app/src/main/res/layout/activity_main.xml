@@ -43,7 +43,7 @@
                 android:layout_height="wrap_content"
                 android:background="#070707"
                 android:gravity="center"
-                android:text="name"
+                android:text="Name"
                 android:textColor="@android:color/holo_green_light" />
 
             <TextView

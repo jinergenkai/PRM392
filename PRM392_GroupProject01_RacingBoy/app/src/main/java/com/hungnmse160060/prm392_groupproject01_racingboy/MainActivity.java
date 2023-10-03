@@ -3,26 +3,19 @@ package com.hungnmse160060.prm392_groupproject01_racingboy;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
 
-import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
-import android.graphics.Color;
-import android.graphics.Interpolator;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.Handler;
-import android.provider.CalendarContract;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import org.w3c.dom.Text;
-
-import java.sql.Array;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
@@ -41,13 +34,16 @@ public class MainActivity extends AppCompatActivity {
     Random random = new Random();
 
     ConstraintLayout racetrack;
+
+    MediaPlayer nhacnen, chosua1, chosua2, nhacwin, nhacthua;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        racetrack = findViewById(R.id.container);
+        settingMusic();
 
+        racetrack = findViewById(R.id.container);
         resultbet = findViewById(R.id.txtResultBet);
 
         txtPlayerMoney= (TextView) findViewById(R.id.txtPlayerMoney);
@@ -127,7 +123,7 @@ public class MainActivity extends AppCompatActivity {
             for (TextView textView : betPlayer) {
                 textView.setEnabled(false);
             }
-
+            chosua1.start();
             update(1);
 
         });
@@ -136,6 +132,23 @@ public class MainActivity extends AppCompatActivity {
             reset();
         });
 
+    }
+
+    private void settingMusic() {
+        //sound start
+        nhacnen = MediaPlayer.create(this, R.raw.nhacnen);
+        nhacnen.setLooping(true);
+        float leftVolume = 0.6f; // Ví dụ: âm lượng 50% cho âm thanh trái
+        float rightVolume = 0.6f; // Ví dụ: âm lượng 50% cho âm thanh phải
+        nhacnen.setVolume(leftVolume, rightVolume);
+        nhacnen.start();
+
+        // tieng cho dua
+        chosua1 = MediaPlayer.create(this, R.raw.dog1minutes);
+        chosua1.setLooping(true);
+
+        nhacwin = MediaPlayer.create(this, R.raw.win);
+        nhacthua = MediaPlayer.create(this, R.raw.lose);
     }
 
     private boolean validateInput() {
@@ -155,6 +168,14 @@ public class MainActivity extends AppCompatActivity {
         }
         playerMoney -= sum;
         txtPlayerMoney.setText("" + playerMoney);
+    }
+
+    private int tongtien() {
+        int sum = 0;
+        for (TextView textView : betPlayer) {
+            sum += Integer.parseInt(textView.getText().toString());
+        }
+        return sum + playerMoney;
     }
 
     //update screen each frame when click button start game
@@ -240,6 +261,8 @@ public class MainActivity extends AppCompatActivity {
         //if all dog finish race.
         else {
             btnReset.setEnabled(true);
+//            chosua1.stop();
+            chosua1.pause();
             showResult();
         }
     }
@@ -261,20 +284,23 @@ public class MainActivity extends AppCompatActivity {
             if (rank == 1) {
                 int betAmount = Integer.parseInt(betPlayer.get(j).getText().toString());
                 winMoney += betAmount*2;
-                resultbetmessage += getNameDog(j) + "*2. ";
+                resultbetmessage += getNameDog(j) + " eat 2. ";
                 //nhi an 1
             } else if (rank == 2) {
                 int betAmount = Integer.parseInt(betPlayer.get(j).getText().toString());
                 winMoney += betAmount;
-                resultbetmessage += getNameDog(j) + "*1. ";
+                resultbetmessage += getNameDog(j) + " eat 1. ";
                 //ba bet mat het
             } else if (rank == 3 || rank == 4) {
 //                int betAmount = Integer.parseInt(betPlayer.get(j).getText().toString());
             }
         }
+        int soTienTungCo = tongtien();
         playerMoney += winMoney;
         Toast.makeText(this, "Số tiền của bạn: " + playerMoney, Toast.LENGTH_SHORT).show();
-        resultbetmessage = (winMoney > 0) ? "win bet: +" + (winMoney) + "$" + resultbetmessage : "lose bet, try again!" ;
+        resultbetmessage = (soTienTungCo < playerMoney) ? "win bet: +" + (soTienTungCo - playerMoney) + "$" + resultbetmessage : "lose bet, try again!" + resultbetmessage;
+        if (soTienTungCo < playerMoney) nhacwin.start();
+        else nhacthua.start();
         resultbet.setText(resultbetmessage);
         txtPlayerMoney.setText(String.valueOf(playerMoney));
     }
@@ -410,10 +436,10 @@ public class MainActivity extends AppCompatActivity {
 
     private String getNameDog(int type) {
         switch (type) {
-            case 0: return "yelo";
-            case 1: return "blu";
-            case 2: return "pin";
-            case 3: return "blan";
+            case 0: return "Yelo";
+            case 1: return "Blu";
+            case 2: return "Pin";
+            case 3: return "Blan";
         }
         return "";
     }

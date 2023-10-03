@@ -116,7 +116,7 @@ public class MainActivity extends AppCompatActivity {
                         else {
                             cur_gift.setBuffTime(bufftime - 1);
                             switch (cur_gift.getType()) {
-                                case 0: speedup = 2; break;
+                                case 0: speedup = 3; break;
                                 case 1: teleport = 10; break;
                                 case 2: isFreeze = true; break;
                             }

@@ -4,4 +4,5 @@
     <color name="white">#FFFFFFFF</color>
     <color name="seekBarBackground">#E0E0E0</color>
     <color name="seekBarProgressColor">#FF5722</color>
+    <color name="purple">#8692f7</color>
 </resources>

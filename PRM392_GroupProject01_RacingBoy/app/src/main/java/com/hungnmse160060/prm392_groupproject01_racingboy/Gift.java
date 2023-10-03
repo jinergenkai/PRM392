@@ -12,8 +12,11 @@ public class Gift {
     Boolean isEnabled = false;
     Boolean isEffected = false;
 
+    Drawable defaultgift;
 
-    public Gift(int player, SeekBar giftImg, int startPos) {
+
+    public Gift(int player, SeekBar giftImg, int startPos, Drawable defaultgift) {
+        this.defaultgift = defaultgift;
         ConstraintLayout.LayoutParams view = new ConstraintLayout.LayoutParams(ConstraintLayout.LayoutParams.MATCH_PARENT, ConstraintLayout.LayoutParams.MATCH_PARENT);
         view.height = 700;
         view.startToStart = ConstraintLayout.LayoutParams.PARENT_ID;
@@ -32,8 +35,8 @@ public class Gift {
 
     public void enableGift(int type, Drawable img, int startPos) {
         this.type = type;
-        this.giftImg.setThumb(img);
         this.giftImg.setProgress(startPos, false);
+        this.giftImg.setThumb(img);
         this.buffTime = getBuffTime(type);
         this.isEnabled = true;
     }
@@ -42,8 +45,8 @@ public class Gift {
         this.type = 0;
         this.buffTime = 0;
         this.isEffected = false;
-//        this.giftImg.setThumb(null);
         this.giftImg.setProgress(startPos);
+        this.giftImg.setThumb(defaultgift);
         this.isEnabled = false;
     }
 
@@ -71,8 +74,9 @@ public class Gift {
         this.buffTime = buffTime;
     }
 
-    public void setEffected(Boolean effected) {
-        this.giftImg.setThumb(null);
+    public void setEffected(Boolean effected, int endPos) {
+        this.giftImg.setThumb(defaultgift);
+        this.giftImg.setProgress(endPos, false);
 //        this.isEnabled = false;
         isEffected = effected;
     }
@@ -88,7 +92,7 @@ public class Gift {
     private int getBuffTime(int type) {
         switch (type) {
             //time speedup
-            case 0: return 4;
+            case 0: return 7;
             //time tele
             case 1: return 1;
             //freeze:

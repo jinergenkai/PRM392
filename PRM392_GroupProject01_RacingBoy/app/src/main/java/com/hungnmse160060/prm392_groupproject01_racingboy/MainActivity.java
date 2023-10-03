@@ -33,7 +33,7 @@ public class MainActivity extends AppCompatActivity {
     ArrayList<Drawable> animaFrame, giftFrame;
     HashMap<Integer, Integer> result = new HashMap<>();
     int dogs_size = 4, startPos = 20, endPos = 90, rank = 0, playerMoney = 100;
-    TextView txtPlayerMoney ;
+    TextView txtPlayerMoney, resultbet;
     ArrayList<TextView> rankPlayer = new ArrayList<>();
     ArrayList<TextView> betPlayer = new ArrayList<>();
     Button btnStart, btnReset;
@@ -47,6 +47,8 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         racetrack = findViewById(R.id.container);
+
+        resultbet = findViewById(R.id.txtResultBet);
 
         txtPlayerMoney= (TextView) findViewById(R.id.txtPlayerMoney);
         txtPlayerMoney.setEnabled(false);
@@ -98,7 +100,7 @@ public class MainActivity extends AppCompatActivity {
             dog.setEnabled(false);
             giftImg.setEnabled(false);
 //            giftImg.setThumb(resize(getResources().getDrawable(R.drawable.nothing), 50, 50));
-            Gift gift = new Gift(i, giftImg, endPos);
+            Gift gift = new Gift(i, giftImg, endPos, getResources().getDrawable(R.drawable.defaultgift));
 
             gifts.add(gift);
             dogs.add(dog);
@@ -119,6 +121,7 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(this, "Tổng số tiền cược phải bé hơn số tiền bạn đang có: " + playerMoney, Toast.LENGTH_SHORT).show();
                 return;
             };
+            ruttien();
             btnStart.setEnabled(false);
             btnReset.setEnabled(false);
             for (TextView textView : betPlayer) {
@@ -130,9 +133,6 @@ public class MainActivity extends AppCompatActivity {
         });
 
         btnReset.setOnClickListener((v) -> {
-            for (TextView textView : betPlayer) {
-                textView.setEnabled(true);
-            }
             reset();
         });
 
@@ -148,36 +148,61 @@ public class MainActivity extends AppCompatActivity {
         }
         return true;
     }
+    private void ruttien() {
+        int sum = 0;
+        for (TextView textView : betPlayer) {
+            sum += Integer.parseInt(textView.getText().toString());
+        }
+        playerMoney -= sum;
+        txtPlayerMoney.setText("" + playerMoney);
+    }
+
+    //update screen each frame when click button start game
     private void update(int anim) {
+        // if all dog not end
         if (!isEnd()) {
+
+            // update spawn gift, random gift and when dog get gift enable buff of gift
             int i = 0;
             for (Gift item: gifts) {
-                if (item.getEnabled()) {
+                //when have gift in race, check when dog get gift
+                if (item.getEnabled() && !item.getEffected()) {
                     int cur_pos_gift = item.getGiftImg().getProgress();
                     int cur_pos_dog = dogs.get(i).getProgress();
                     item.getGiftImg().setProgress(cur_pos_gift - 1);
-                    if (cur_pos_gift <= cur_pos_dog) {
-                        item.setEffected(true);
+                    if (cur_pos_gift <= cur_pos_dog+2) {
+                        item.setEffected(true, endPos);
                     }
                     i++;
                     continue;
                 }
+
+                //don't spawn gift when near finish line
+                if (dogs.get(i).getProgress() >= endPos - 10) {
+                    i++;
+                    continue;
+                }
+
+                // spawn 3 type of gift by random function
                 int ran = random.nextInt(100);
-                if (ran < 5) {
+                if (ran < 2) {
                     int type = random.nextInt(3);
-                    gifts.get(i).enableGift(type , giftFrame.get(type), endPos);
+//                    item.enableGift(type , giftFrame.get(type), endPos);
+                    item.enableGift(type , getGiftFrame(type), endPos);
                 }
                 i++;
             }
 
+            // update dog movement and when dog eat gift
             for (i = 0; i < dogs_size; i++) {
                 SeekBar cur_dog = dogs.get(i);
                 Gift cur_gift = gifts.get(i);
                 if (cur_dog.getProgress() < endPos) {
                     boolean isFreeze = false;
-                    int speedup = 1;
+                    int speedup = 0;
                     int teleport = 0;
 
+                    //when dog have buff by gift
                     if (cur_gift.getEffected()) {
                         int bufftime = cur_gift.getBuffTime();
                         if (bufftime <= 0) {
@@ -186,25 +211,25 @@ public class MainActivity extends AppCompatActivity {
                         else {
                             cur_gift.setBuffTime(bufftime - 1);
                             switch (cur_gift.getType()) {
-                                case 0: speedup = 2; break;
-                                case 1: teleport = 10; break;
+                                case 0: speedup = 1; break;
+                                case 1: teleport = 5; break;
                                 case 2: isFreeze = true; break;
                             }
                         }
                     }
 
+                    //update dog movement
                     dogs.get(i).setThumb(animaFrame.get(i*8 + anim%8));
                     if (isFreeze) {
                         cur_dog.setThumb(resize(getResources().getDrawable(R.drawable.dogfreezed)));
                     }
                     else  {
-                        cur_dog.setProgress(Math.min(cur_dog.getProgress() + (random.nextInt(3)/2 + teleport) * speedup, endPos));
+                        cur_dog.setProgress(Math.min(cur_dog.getProgress() + (random.nextInt(3)/2 + teleport) + speedup, endPos));
                     }
                 }
             }
 
-
-
+            //recursive
             handler.postDelayed(new Runnable() {
                 @Override
                 public void run() {
@@ -212,42 +237,53 @@ public class MainActivity extends AppCompatActivity {
                 }
             }, 50);
         }
+        //if all dog finish race.
         else {
-
-            btnStart.setEnabled(true);
             btnReset.setEnabled(true);
-
             showResult();
         }
     }
 
+    //show result when all dog finish race.
     private void showResult() {
         int i = 0;
         for (TextView item: rankPlayer) {
             item.setText(String.valueOf(result.get(i)));
             i++;
         }
+        int winMoney = 0;
+        String resultbetmessage = "\n";
         for (int j = 0; j < dogs_size; j++) {
             TextView item = rankPlayer.get(j);
             item.setText(String.valueOf(result.get(j)));
-            if (result.get(j) == 1) {
+            int rank = result.get(j);
+            //nhat an 2
+            if (rank == 1) {
                 int betAmount = Integer.parseInt(betPlayer.get(j).getText().toString());
-                playerMoney += (2 * betAmount);
-                txtPlayerMoney.setText(String.valueOf(playerMoney));
-            } else if (result.get(j) == 2) {
+                winMoney += betAmount*2;
+                resultbetmessage += getNameDog(j) + "*2. ";
+                //nhi an 1
+            } else if (rank == 2) {
                 int betAmount = Integer.parseInt(betPlayer.get(j).getText().toString());
-                playerMoney += betAmount;
-                txtPlayerMoney.setText(String.valueOf(playerMoney));
-            } else if (result.get(j) == 3 || result.get(j) == 4) {
-                int betAmount = Integer.parseInt(betPlayer.get(j).getText().toString());
-                playerMoney -= betAmount;
-                txtPlayerMoney.setText(String.valueOf(playerMoney));
+                winMoney += betAmount;
+                resultbetmessage += getNameDog(j) + "*1. ";
+                //ba bet mat het
+            } else if (rank == 3 || rank == 4) {
+//                int betAmount = Integer.parseInt(betPlayer.get(j).getText().toString());
             }
         }
+        playerMoney += winMoney;
         Toast.makeText(this, "Số tiền của bạn: " + playerMoney, Toast.LENGTH_SHORT).show();
+        resultbetmessage = (winMoney > 0) ? "win bet: +" + (winMoney) + "$" + resultbetmessage : "lose bet, try again!" ;
+        resultbet.setText(resultbetmessage);
+        txtPlayerMoney.setText(String.valueOf(playerMoney));
     }
 
     private void reset() {
+        for (TextView textView : betPlayer) {
+            textView.setEnabled(true);
+        }
+        btnStart.setEnabled(true);
         for (TextView item: rankPlayer) {
             item.setText("");
         }
@@ -257,11 +293,16 @@ public class MainActivity extends AppCompatActivity {
 
             gifts.get(i).resetGift(endPos);
         }
+        resultbet.setText("");
+        for (TextView item: betPlayer) {
+            item.setText("0");
+        }
         result.clear();
         rank = 0;
 
     }
 
+    // check is all dog is finish race.
     private boolean isEnd() {
         boolean allend = true;
         int index = 0;
@@ -283,6 +324,7 @@ public class MainActivity extends AppCompatActivity {
         return allend;
     }
 
+    // create seekbar dog
     SeekBar CreateDog(int player) {
 //        SeekBar Dog = findViewById(R.id.Dog1);
         SeekBar Dog = new SeekBar(this);
@@ -356,5 +398,23 @@ public class MainActivity extends AppCompatActivity {
         list.add(resize(getResources().getDrawable(R.drawable.tele), 50, 50));
         list.add(resize(getResources().getDrawable(R.drawable.freeze), 50, 50));
         return list;
+    }
+    private Drawable getGiftFrame(int type) {
+        switch (type) {
+            case 0: return resize(getResources().getDrawable(R.drawable.speedup), 50, 50);
+            case 1: return resize(getResources().getDrawable(R.drawable.tele), 50, 50);
+            case 2: return resize(getResources().getDrawable(R.drawable.freeze), 50, 50);
+        }
+        return getResources().getDrawable(R.drawable.defaultgift);
+    }
+
+    private String getNameDog(int type) {
+        switch (type) {
+            case 0: return "yelo";
+            case 1: return "blu";
+            case 2: return "pin";
+            case 3: return "blan";
+        }
+        return "";
     }
 }

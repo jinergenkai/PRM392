@@ -16,8 +16,8 @@ public class LoginActivity extends AppCompatActivity {
         setContentView(R.layout.activity_login);
         username = findViewById(R.id.username);
         password = findViewById(R.id.password);
-        username.setText("nguoikhongchoilanguoithang");
-        password.setText("123456");
+        /*username.setText("nguoikhongchoilanguoithang");
+        password.setText("123456");*/
         loginButton = findViewById(R.id.loginButton);
         loginButton.setOnClickListener((view) -> {
                 if (username.getText().toString().equals("nguoikhongchoilanguoithang") && password.getText().toString().equals("123456")) {

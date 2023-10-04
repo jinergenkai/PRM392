@@ -285,9 +285,8 @@
             android:background="#6750A3"
             android:ems="10"
             android:gravity="center"
-            android:textColor="@color/white"
-            android:text=""
-            />
+            android:text="Set money for Bet column and press Start to play"
+            android:textColor="@color/white" />
 
         <!-- Button 2 -->
     </LinearLayout>

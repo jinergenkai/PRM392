@@ -46,6 +46,7 @@ public class MainActivity extends AppCompatActivity {
         racetrack = findViewById(R.id.container);
         resultbet = findViewById(R.id.txtResultBet);
 
+
         txtPlayerMoney= (TextView) findViewById(R.id.txtPlayerMoney);
         txtPlayerMoney.setEnabled(false);
         txtPlayerMoney.setText(String.valueOf(playerMoney));
@@ -124,6 +125,7 @@ public class MainActivity extends AppCompatActivity {
                 textView.setEnabled(false);
             }
             chosua1.start();
+            resultbet.setText("Running...");
             update(1);
 
         });
@@ -298,7 +300,7 @@ public class MainActivity extends AppCompatActivity {
         int soTienTungCo = tongtien();
         playerMoney += winMoney;
         Toast.makeText(this, "Số tiền của bạn: " + playerMoney, Toast.LENGTH_SHORT).show();
-        resultbetmessage = (soTienTungCo < playerMoney) ? "win bet: +" + (soTienTungCo - playerMoney) + "$" + resultbetmessage : "lose bet, try again!" + resultbetmessage;
+        resultbetmessage = (soTienTungCo < playerMoney) ? "Win bet: +" + (playerMoney- soTienTungCo) + "$" + resultbetmessage : "Lose bet, try again!" + resultbetmessage;
         if (soTienTungCo < playerMoney) nhacwin.start();
         else nhacthua.start();
         resultbet.setText(resultbetmessage);
@@ -319,7 +321,7 @@ public class MainActivity extends AppCompatActivity {
 
             gifts.get(i).resetGift(endPos);
         }
-        resultbet.setText("");
+        resultbet.setText("Set money for Bet column and press Start to play");
         for (TextView item: betPlayer) {
             item.setText("0");
         }
